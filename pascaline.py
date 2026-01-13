@@ -1,9 +1,9 @@
 def add(numbre1, numbre2):
-    result = numbre1 * numbre2
+    result = numbre1 + numbre2
     print (result)
 
 def sub(numbre1, numbre2):
-    result = numbre1 * numbre2
+    result = numbre1 - numbre2
     print (result)
 
 def mult(numbre1, numbre2):
@@ -14,25 +14,30 @@ def div(numbre1, numbre2):
     if numbre2 == 0:
         print("division by 0 impossible")
     else:
-        result = numbre1 * numbre2
-        print (result)
+        result = numbre1 / numbre2
+        print (int(result))
     
 while True:
     
-    numbre1 = int(input("entre a numbre :"))
+    try:
+           
+        numbre1 = int(input("entre a numbre :"))
 
-    operation = str(input("what operation you wanna use :"))
+        operation = str(input("what operation you wanna use :"))
 
-    numbre2 = int(input("entre a numbre :"))
-    
-    while True:
+        numbre2 = int(input("entre a numbre :"))
+
         if operation == "+":
-            add(numbre1,numbre2)
+                add(numbre1,numbre2)
         elif operation == "-":
-            sub(numbre1,numbre2)
+                sub(numbre1,numbre2)
         elif operation == "*":
-            mult(numbre1,numbre2)
+                mult(numbre1,numbre2)
         elif operation == "/":
-            div(numbre1,numbre2)
+                div(numbre1,numbre2)
         else:
-            print("opps wrong choice!")
+                print("\n opps wrong choice!")
+
+    except KeyboardInterrupt:
+          print("\n stopped by user!")
+          break
