@@ -8,25 +8,25 @@ class Operations:
 
     def show_history(self):
         if not self.history:
-            print("Historique vide.")
+            print("Historic empty.")
         else:
             for op in self.history:
                 print(op)
 
     def reset_history(self):
         self.history = []
-        print("Historique réinitialisé.")
-##########################################################
-    # --- Parseur avec parenthèses ---
-    def evaluate_expression(self, expr):
-        def precedence(op):
+        print("Historic reset.")
+    
+    @staticmethod
+    def priority(op):
             if op in ('+', '-'):
                 return 1
             if op in ('*', '/'):
                 return 2
             return 0
-
-        def apply_op(a, b, op):
+    
+    @staticmethod
+    def apply_op(a, b, op):
             if op == '+': return a + b
             if op == '-': return a - b
             if op == '*': return a * b
@@ -34,7 +34,58 @@ class Operations:
                 if b == 0:
                     raise ValueError("Divided by zero is not allowed")
                 return a / b
+##########################################################
+    def validate_expression(self, expr):
+        tokens = expr.replace(" ", "")
+        
+        #Check for empty expression
+        if not tokens:
+            raise ValueError("Empty expression.")
+        
+        # Character validation ( will change with cos, sin ,tan later)
+        valid_chars = "0123456789.+-*/()"
+        for c in tokens:
+            if c not in valid_chars:
+                raise ValueError(f"Invalid character detected : '{c}'")
 
+        # Parenthesis verification
+        stack = []
+        for c in tokens:
+            if c == '(':
+                stack.append(c)
+            elif c == ')':
+                if not stack:
+                    raise ValueError("Closing parenthesis without an opening parenthesis.")
+                stack.pop()
+        if stack:
+            raise ValueError("Opening parenthesis without a closing one.")
+
+        # Checking consecutive operators
+        operators = "+-"
+        for i in range(len(tokens) - 1):
+            if tokens[i] in operators and tokens[i+1] in operators:
+                raise ValueError("Two consecutive operators detected.")
+
+        # Checking operator at beginning/end
+        if tokens[0] in operators  or tokens[-1] in operators:
+                if tokens[0] != '-' and tokens[0] != '+':
+                    raise ValueError("Expression cannot start or end with an operator.")
+        # Checking malformed numbers
+        parts = (tokens.replace("+", " ")
+                 .replace("-", " ")
+                 .replace("*", " ")
+                 .replace("/", " ")
+                 .replace("(", " ")
+                 .replace(")", " ")
+                 .split())
+        for p in parts:
+            if p.count('.') > 1:
+                raise ValueError(f"Malformed number : {p}")
+##########################################################
+    # --- Parseur avec parenthèses ---
+    def evaluate_expression(self, expr):
+        
+        calc = Operations()
         values = []
         ops = []
         i = 0
@@ -55,16 +106,16 @@ class Operations:
                     b = values.pop()
                     a = values.pop()
                     op = ops.pop()
-                    values.append(apply_op(a, b, op))
+                    values.append(self.apply_op(a, b, op)) 
                 ops.pop()  # remove '('
                 i += 1
             else:
                 # opérateur
-                while ops and precedence(ops[-1]) >= precedence(tokens[i]):
+                while ops and self.priority(ops[-1]) >= self.priority(tokens[i]):
                     b = values.pop()
                     a = values.pop()
                     op = ops.pop()
-                    values.append(apply_op(a, b, op))
+                    values.append(self.apply_op(a, b, op))
                 ops.append(tokens[i])
                 i += 1
 
@@ -73,7 +124,7 @@ class Operations:
             b = values.pop()
             a = values.pop()
             op = ops.pop()
-            values.append(apply_op(a, b, op))
+            values.append(self.apply_op(a, b, op))
 
         result = values[0]
         self.result = result
@@ -81,8 +132,6 @@ class Operations:
         return result
 
 ###########################################################
-
-
 def main():
     calc = Operations()
     while True:
@@ -92,12 +141,12 @@ def main():
             choix = input("Tapez 'expr' pour une expression complète ou 'simple' pour deux nombres : ")
 
             if choix == "expr":
-                expr = input("Entrez l’expression (ex: (2+3)*4-5/2) : ")
+                expr = input("Entrez l'expression (ex: (2+3)*4-5/2) : ")
                 result = calc.evaluate_expression(expr)
             elif choix == "simple":
                 n1 = float(input("Entrez le premier nombre : "))
                 calc.result = n1   # Initialisation avec n1
-                op = input("Entrez l’opération (+, -, *, /) : ")
+                op = input("Entrez l'opération (+, -, *, /) : ")
                 n2 = float(input("Entrez le deuxième nombre : "))
 
                 if op == "+":
