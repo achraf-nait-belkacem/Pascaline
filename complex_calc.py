@@ -4,17 +4,17 @@ class History:
 
     def show_history(self):
         if not self.history:
-            print("Historic empty.")
-        else:
-            for op in self.history:
-                print(op)
+            return []
+        return self.history.copy()
 
     def reset_history(self):
+        cleared_count = len(self.history)
         self.history = []
-        print("Historic reset.")
+        return cleared_count
     
     def add_entry(self, entry):
         self.history.append(entry)
+        return len(self.history)
 
 class Operations:
     def __init__(self, history=None):
@@ -25,7 +25,9 @@ class Operations:
             self.history = history
 
     def clear(self):
+        previous_result = self.result
         self.result = 0
+        return previous_result
     
     @staticmethod
     def priority(op):
@@ -33,6 +35,8 @@ class Operations:
                 return 1
             if op in ('*', '/'):
                 return 2
+            if op == '**':
+                return 3
             return 0
     
     @staticmethod
@@ -44,19 +48,23 @@ class Operations:
                 if b == 0:
                     raise ValueError("Divided by zero is not allowed")
                 return a / b
-##########################################################
+            if op == '**':
+                return a ** b
+
     def validate_expression(self, expr):
-        tokens = expr.replace(" ", "")
+        # Replace pi with 3.14 for validation
+        expr_with_pi = expr.replace("pi", "3.14").replace("PI", "3.14").replace("Pi", "3.14")
+        tokens = expr_with_pi.replace(" ", "")
         
         #Check for empty expression
         if not tokens:
-            raise ValueError("Empty expression.")
+            return False
         
         # Character validation ( will change with cos, sin ,tan later)
         valid_chars = "0123456789.+-*/()"
         for c in tokens:
             if c not in valid_chars:
-                raise ValueError(f"Invalid character detected : '{c}'")
+                return False
 
         # Parenthesis verification
         stack = []
@@ -65,28 +73,52 @@ class Operations:
                 stack.append(c)
             elif c == ')':
                 if not stack:
-                    raise ValueError("Closing parenthesis without an opening parenthesis.")
+                    return False
                 stack.pop()
         if stack:
-            raise ValueError("Opening parenthesis without a closing one.")
+            return False
 
-        # Checking consecutive operators (except for negative numbers)
+        # Check for ** operator (must be two consecutive *)
+        i = 0
+        while i < len(tokens) - 1:
+            if tokens[i] == '*' and tokens[i+1] == '*':
+                # Found **, skip both characters
+                i += 2
+            else:
+                i += 1
+        
+        # Checking consecutive operators (except for negative numbers and **)
         operators = "+-*/"
-        for i in range(len(tokens) - 1):
-            if tokens[i] in operators and tokens[i+1] in operators:
+        i = 0
+        while i < len(tokens) - 1:
+            if tokens[i] == '*' and tokens[i+1] == '*':
+                # Skip ** operator
+                i += 2
+            elif tokens[i] in operators and tokens[i+1] in operators:
                 # Allow '-' after operators for negative numbers, but not other combinations
                 if not (tokens[i] in '+-*/' and tokens[i+1] == '-'):
-                    raise ValueError(f"Two consecutive operators detected: '{tokens[i]}' and '{tokens[i+1]}'")
+                    return False
+                i += 1
+            else:
+                i += 1
 
         # Checking operator at beginning/end
+        # Check if expression starts with ** (invalid)
+        if len(tokens) >= 2 and tokens[0] == '*' and tokens[1] == '*':
+            return False
+        # Check if expression ends with ** (invalid)
+        if len(tokens) >= 2 and tokens[-2] == '*' and tokens[-1] == '*':
+            return False
         if tokens[-1] in operators:
-            raise ValueError("Expression cannot end with an operator.")
+            return False
         if tokens[0] in operators:
             # Allow '-' or '+' at start for negative/positive numbers
             if tokens[0] not in ('-', '+'):
-                raise ValueError("Expression cannot start with '*' or '/'.")
+                return False
         # Checking malformed numbers
-        parts = (tokens.replace("+", " ")
+        # Replace ** with space before splitting
+        temp_tokens = tokens.replace("**", " ")
+        parts = (temp_tokens.replace("+", " ")
                  .replace("-", " ")
                  .replace("*", " ")
                  .replace("/", " ")
@@ -95,10 +127,16 @@ class Operations:
                  .split())
         for p in parts:
             if p.count('.') > 1:
-                raise ValueError(f"Malformed number : {p}")
-##########################################################
+                return False
+        
+        return True
     # --- Parseur avec parenthèses ---
     def evaluate_expression(self, expr):
+        # Replace pi with 3.14
+        expr = expr.replace("pi", "3.14").replace("PI", "3.14").replace("Pi", "3.14")
+        
+        if not self.validate_expression(expr):
+            raise ValueError("Invalid expression")
         
         values = []
         ops = []
@@ -141,9 +179,18 @@ class Operations:
                     values.append(self.apply_op(a, b, op)) 
                 ops.pop()  # remove '('
                 i += 1
+            elif i < len(tokens) - 1 and tokens[i] == '*' and tokens[i+1] == '*':
+                # Handle ** operator (right-associative, so use > instead of >=)
+                while ops and ops[-1] != '(' and self.priority(ops[-1]) > self.priority('**'):
+                    b = values.pop()
+                    a = values.pop()
+                    op = ops.pop()
+                    values.append(self.apply_op(a, b, op))
+                ops.append('**')
+                i += 2
             else:
                 # opérateur
-                while ops and self.priority(ops[-1]) >= self.priority(tokens[i]):
+                while ops and ops[-1] != '(' and self.priority(ops[-1]) >= self.priority(tokens[i]):
                     b = values.pop()
                     a = values.pop()
                     op = ops.pop()
