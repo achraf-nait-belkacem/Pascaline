@@ -54,7 +54,6 @@ class Operations:
             if op == '//': return a // b
 
 
-##########################################################
     def validate_expression(self, expr):
         # Replace pi with 3.14 for validation
         expr_with_pi = expr.replace("pi", "3.14159265359").replace("PI", "3.14159265359").replace("Pi", "3.14159265359")
