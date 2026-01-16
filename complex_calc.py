@@ -34,6 +34,10 @@ class Operations:
                 if b == 0:
                     raise ValueError("Divided by zero is not allowed")
                 return a / b
+            if op == '**': return a ** b
+            if op == '//': return a // b
+
+
 ##########################################################
     def validate_expression(self, expr):
         tokens = expr.replace(" ", "")
@@ -45,7 +49,8 @@ class Operations:
         # Character validation ( will change with cos, sin ,tan later)
         valid_chars = "0123456789.+-*/()"
         for c in tokens:
-            if c not in valid_chars:
+            if c not in valid_chars: 
+                #return False
                 raise ValueError(f"Invalid character detected : '{c}'")
 
         # Parenthesis verification
@@ -55,13 +60,15 @@ class Operations:
                 stack.append(c)
             elif c == ')':
                 if not stack:
+                    #return False
                     raise ValueError("Closing parenthesis without an opening parenthesis.")
                 stack.pop()
         if stack:
+            #return False
             raise ValueError("Opening parenthesis without a closing one.")
 
         # Checking consecutive operators
-        operators = "+-"
+        operators = "+-" # double ** and // allowed for power and floor division
         for i in range(len(tokens) - 1):
             if tokens[i] in operators and tokens[i+1] in operators:
                 raise ValueError("Two consecutive operators detected.")
@@ -69,7 +76,7 @@ class Operations:
         # Checking operator at beginning/end
         if tokens[0] in operators  or tokens[-1] in operators:
                 if tokens[0] != '-' and tokens[0] != '+':
-                    raise ValueError("Expression cannot start or end with an operator.")
+                    raise ValueError("Expression cannot start or end with multiply (*) or divide (/) operator .")
         # Checking malformed numbers
         parts = (tokens.replace("+", " ")
                  .replace("-", " ")
@@ -80,12 +87,13 @@ class Operations:
                  .split())
         for p in parts:
             if p.count('.') > 1:
+                #return False
                 raise ValueError(f"Malformed number : {p}")
 ##########################################################
     # --- Parseur avec parenthèses ---
     def evaluate_expression(self, expr):
-        
-        calc = Operations()
+
+        self.validate_expression(expr)
         values = []
         ops = []
         i = 0
@@ -174,17 +182,14 @@ def main():
         except ValueError as e:
             print(f"Erreur : {e}")
 
-        choix = input("Historique (h), Réinitialiser (r), Quitter (q), Continuer (c) : ")
-        if choix == "h":
-            calc.show_history()
-            i = 1
-        elif choix == "r":
-            calc.reset_history()
-            i = 1
-        elif choix == "q":
-            print("Fin du programme.")
-            i = 1
-            break
+            choix = input("Historique (h), Réinitialiser (r), Quitter (q), Continuer (c) : ")
+            if choix == "h":
+                calc.show_history()
+            elif choix == "r":
+                calc.reset_history()
+            elif choix == "q":
+                print("Fin du programme.")
+                break
         
 #########################################################
 main()
