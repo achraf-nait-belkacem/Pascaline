@@ -1,10 +1,6 @@
-class Operations:
+class History:
     def __init__(self):
-        self.result = 0
         self.history = []
-
-    def clear(self):
-        self.result = 0
 
     def show_history(self):
         if not self.history:
@@ -16,6 +12,20 @@ class Operations:
     def reset_history(self):
         self.history = []
         print("Historic reset.")
+    
+    def add_entry(self, entry):
+        self.history.append(entry)
+
+class Operations:
+    def __init__(self, history=None):
+        self.result = 0
+        if history is None:
+            self.history = History()
+        else:
+            self.history = history
+
+    def clear(self):
+        self.result = 0
     
     @staticmethod
     def priority(op):
@@ -60,16 +70,21 @@ class Operations:
         if stack:
             raise ValueError("Opening parenthesis without a closing one.")
 
-        # Checking consecutive operators
-        operators = "+-"
+        # Checking consecutive operators (except for negative numbers)
+        operators = "+-*/"
         for i in range(len(tokens) - 1):
             if tokens[i] in operators and tokens[i+1] in operators:
-                raise ValueError("Two consecutive operators detected.")
+                # Allow '-' after operators for negative numbers, but not other combinations
+                if not (tokens[i] in '+-*/' and tokens[i+1] == '-'):
+                    raise ValueError(f"Two consecutive operators detected: '{tokens[i]}' and '{tokens[i+1]}'")
 
         # Checking operator at beginning/end
-        if tokens[0] in operators  or tokens[-1] in operators:
-                if tokens[0] != '-' and tokens[0] != '+':
-                    raise ValueError("Expression cannot start or end with an operator.")
+        if tokens[-1] in operators:
+            raise ValueError("Expression cannot end with an operator.")
+        if tokens[0] in operators:
+            # Allow '-' or '+' at start for negative/positive numbers
+            if tokens[0] not in ('-', '+'):
+                raise ValueError("Expression cannot start with '*' or '/'.")
         # Checking malformed numbers
         parts = (tokens.replace("+", " ")
                  .replace("-", " ")
@@ -85,19 +100,36 @@ class Operations:
     # --- Parseur avec parenthèses ---
     def evaluate_expression(self, expr):
         
-        calc = Operations()
         values = []
         ops = []
         i = 0
         tokens = expr.replace(" ", "")
 
         while i < len(tokens):
-            if tokens[i].isdigit() or tokens[i] == '.':
+            if tokens[i].isdigit() or (tokens[i] == '.' and i + 1 < len(tokens) and tokens[i+1].isdigit()):
                 num = ""
                 while i < len(tokens) and (tokens[i].isdigit() or tokens[i] == '.'):
                     num += tokens[i]
                     i += 1
                 values.append(float(num))
+            elif tokens[i] == '+' and (i == 0 or tokens[i-1] == '(' or tokens[i-1] in '+-*/'):
+                # Handle unary plus (just skip it)
+                i += 1
+            elif tokens[i] == '-' and (i == 0 or tokens[i-1] == '(' or tokens[i-1] in '+-*/'):
+                # Handle negative numbers at start or after operators
+                i += 1
+                if i < len(tokens) and (tokens[i].isdigit() or tokens[i] == '.'):
+                    num = "-"
+                    while i < len(tokens) and (tokens[i].isdigit() or tokens[i] == '.'):
+                        num += tokens[i]
+                        i += 1
+                    values.append(float(num))
+                elif i < len(tokens) and tokens[i] == '(':
+                    # Handle negative before parenthesis: -(expression)
+                    values.append(0)
+                    ops.append('-')
+                else:
+                    raise ValueError("Invalid negative number format")
             elif tokens[i] == '(':
                 ops.append(tokens[i])
                 i += 1
@@ -128,63 +160,5 @@ class Operations:
 
         result = values[0]
         self.result = result
-        self.history.append(f"{expr} = {result}")
+        self.history.add_entry(f"{expr} = {result}")
         return result
-
-###########################################################
-def main():
-    calc = Operations()
-    while True:
-        
-        # def input_user()
-        try:
-            choix = input("Tapez 'expr' pour une expression complète ou 'simple' pour deux nombres : ")
-
-            if choix == "expr":
-                expr = input("Entrez l'expression (ex: (2+3)*4-5/2) : ")
-                result = calc.evaluate_expression(expr)
-            elif choix == "simple":
-                n1 = float(input("Entrez le premier nombre : "))
-                calc.result = n1   # Initialisation avec n1
-                op = input("Entrez l'opération (+, -, *, /) : ")
-                n2 = float(input("Entrez le deuxième nombre : "))
-
-                if op == "+":
-                    result = calc.result + n2
-                elif op == "-":
-                    result = calc.result - n2
-                elif op == "*":
-                    result = calc.result * n2
-                elif op == "/":
-                    if n2 == 0:
-                        raise ValueError("Division par zéro interdite")
-                    result = calc.result / n2
-                else:
-                    print("Opération non reconnue.")
-                    continue
-
-                calc.history.append(f"{n1} {op} {n2} = {result}")
-                calc.result = result
-            else:
-                print("Choix non reconnu.")
-                continue
-            
-            print(f"Résultat : {result}")
-        #Fin user try
-        except ValueError as e:
-            print(f"Erreur : {e}")
-
-        choix = input("Historique (h), Réinitialiser (r), Quitter (q), Continuer (c) : ")
-        if choix == "h":
-            calc.show_history()
-            i = 1
-        elif choix == "r":
-            calc.reset_history()
-            i = 1
-        elif choix == "q":
-            print("Fin du programme.")
-            i = 1
-            break
-        
-#########################################################
-main()
