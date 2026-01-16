@@ -1,6 +1,7 @@
 class History:
     def __init__(self):
         self.history = []
+        self.expr = ""
 
     def show_history(self):
         if not self.history:
