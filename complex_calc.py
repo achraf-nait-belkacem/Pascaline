@@ -19,6 +19,7 @@ class History:
 
 class Operations:
     def __init__(self, history=None):
+        self.err_msg = ""
         self.result = 0
         if history is None:
             self.history = History()
@@ -67,8 +68,8 @@ class Operations:
         valid_chars = "0123456789.+-*/()"
         for c in tokens:
             if c not in valid_chars: 
-                #return False
-                raise ValueError(f"Invalid character detected : '{c}'")
+                self.err_msg = f"Invalid character detected : '{c}'"
+                return False
 
         # Parenthesis verification
         stack = []
@@ -77,23 +78,27 @@ class Operations:
                 stack.append(c)
             elif c == ')':
                 if not stack:
-                    #return False
-                    raise ValueError("Closing parenthesis without an opening parenthesis.")
+                    self.err_msg = "Closing parenthesis without an opening parenthesis."
+                    return False
+
                 stack.pop()
         if stack:
-            #return False
-            raise ValueError("Opening parenthesis without a closing one.")
+            self.err_msg = "Opening parenthesis without a closing one."
+            return False
 
         # Checking consecutive operators
         operators = "+-" # double ** and // allowed for power and floor division
         for i in range(len(tokens) - 1):
             if tokens[i] in operators and tokens[i+1] in operators:
-                raise ValueError("Two consecutive operators detected.")
+                self.err_msg = "Two consecutive operators detected."
+                return False
 
         # Checking operator at beginning/end
         if tokens[0] in operators  or tokens[-1] in operators:
                 if tokens[0] != '-' and tokens[0] != '+':
-                    raise ValueError("Expression cannot start or end with multiply (*) or divide (/) operator .")
+                    self.err_msg = "Expression cannot start or end with multiply (*) or divide (/) operator."
+                    return False
+
         # Checking malformed numbers
         # Replace ** with space before splitting
         temp_tokens = tokens.replace("**", " ")
@@ -113,9 +118,6 @@ class Operations:
     def evaluate_expression(self, expr):
         # Replace pi with 3.14
         expr = expr.replace("pi", "3.14159265359").replace("PI", "3.14159265359").replace("Pi", "3.14159265359")
-        
-        if not self.validate_expression(expr):
-            raise ValueError("Invalid expression")
         
         values = []
         ops = []
@@ -146,7 +148,9 @@ class Operations:
                     values.append(0)
                     ops.append('-')
                 else:
-                    raise ValueError("Invalid negative number format")
+                    self.err_msg = "Invalid negative number format."
+                    return False
+
             elif tokens[i] == '(':
                 ops.append(tokens[i])
                 i += 1

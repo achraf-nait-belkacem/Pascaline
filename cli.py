@@ -11,6 +11,7 @@ def quit_msg():
     print(QUIT_MSG)
     exit(0)
 
+
 def cli_main():
     signal.signal(signal.SIGINT, sigint_handler)
 
@@ -24,8 +25,9 @@ def cli_main():
             help_msg()
         elif usr_input.lower() == "q" or usr_input.lower() == "quit":
             quit_msg()
-        try:
-            print(calculator.evaluate_expression(usr_input))
-        except:
-            print(f"{calculator.expr}: expression mistyped.")
 
+        if calculator.validate_expression(usr_input) is False:
+            print(f"{calculator.err_msg}")
+            continue
+
+        print(calculator.evaluate_expression(usr_input))
