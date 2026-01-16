@@ -53,7 +53,7 @@ class Operations:
 
     def validate_expression(self, expr):
         # Replace pi with 3.14 for validation
-        expr_with_pi = expr.replace("pi", "3.14").replace("PI", "3.14").replace("Pi", "3.14")
+        expr_with_pi = expr.replace("pi", "3.14159265359").replace("PI", "3.14159265359").replace("Pi", "3.14159265359")
         tokens = expr_with_pi.replace(" ", "")
         
         #Check for empty expression
@@ -133,7 +133,7 @@ class Operations:
     # --- Parseur avec parenthèses ---
     def evaluate_expression(self, expr):
         # Replace pi with 3.14
-        expr = expr.replace("pi", "3.14").replace("PI", "3.14").replace("Pi", "3.14")
+        expr = expr.replace("pi", "3.14159265359").replace("PI", "3.14159265359").replace("Pi", "3.14159265359")
         
         if not self.validate_expression(expr):
             raise ValueError("Invalid expression")
