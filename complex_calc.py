@@ -38,7 +38,7 @@ class Operations:
                 return 1
             if op in ('*', '/'):
                 return 2
-            if op == '**':
+            if op == '^':
                 return 3
             return 0
     
@@ -51,10 +51,11 @@ class Operations:
                 if b == 0:
                     raise ValueError("Divided by zero is not allowed")
                 return a / b
-            if op == '**': return a ** b
+            if op == '^': return a ** b
             if op == '//': return a // b
 
 
+##########################################################
     def validate_expression(self, expr):
         # Replace pi with 3.14 for validation
         expr_with_pi = expr.replace("pi", "3.14159265359").replace("PI", "3.14159265359").replace("Pi", "3.14159265359")
@@ -65,7 +66,7 @@ class Operations:
             return False
         
         # Character validation ( will change with cos, sin ,tan later)
-        valid_chars = "0123456789.+-*/()"
+        valid_chars = "0123456789.+-*/^()"
         for c in tokens:
             if c not in valid_chars: 
                 self.err_msg = f"Invalid character detected : '{c}'"
@@ -86,22 +87,40 @@ class Operations:
             self.err_msg = "Opening parenthesis without a closing one."
             return False
 
-        # Checking consecutive operators
-        operators = "+-" # double ** and // allowed for power and floor division
-        for i in range(len(tokens) - 1):
-            if tokens[i] in operators and tokens[i+1] in operators:
-                self.err_msg = "Two consecutive operators detected."
-                return False
+        # Checking consecutive operators and invalid operator combinations
+        operators = "+-*/^"
+        i = 0
+        while i < len(tokens) - 1:
+            # Check for invalid sequences like ^^, *^, ^*, etc.
+            if tokens[i] == '^' and tokens[i+1] == '^':
+                raise ValueError("Invalid operator sequence: '^^' detected. Use single '^' for exponentiation.")
+            elif tokens[i] in operators and tokens[i+1] in operators:
+                # Check for invalid combinations like *^, ^*, etc.
+                if (tokens[i] == '*' and tokens[i+1] == '^') or (tokens[i] == '^' and tokens[i+1] == '*'):
+                    raise ValueError(f"Invalid operator sequence: '{tokens[i]}{tokens[i+1]}' detected.")
+                # Allow '-' after operators for negative numbers
+                if not (tokens[i] in '+-*/^' and tokens[i+1] == '-'):
+                    raise ValueError(f"Two consecutive operators detected: '{tokens[i]}' and '{tokens[i+1]}'")
+                i += 1
+            else:
+                i += 1
 
         # Checking operator at beginning/end
-        if tokens[0] in operators  or tokens[-1] in operators:
-                if tokens[0] != '-' and tokens[0] != '+':
-                    self.err_msg = "Expression cannot start or end with multiply (*) or divide (/) operator."
-                    return False
-
+        if tokens[-1] in operators:
+            raise ValueError("Expression cannot end with an operator.")
+        if tokens[0] in operators:
+            # Allow '-' or '+' at start for negative/positive numbers
+            if tokens[0] not in ('-', '+'):
+                raise ValueError("Expression cannot start with '*', '/', or '^' operator.")
+        # Check if expression starts with ^ (invalid)
+        if len(tokens) >= 1 and tokens[0] == '^':
+            raise ValueError("Expression cannot start with '^' operator.")
+        # Check if expression ends with ^ (invalid)
+        if len(tokens) >= 1 and tokens[-1] == '^':
+            raise ValueError("Expression cannot end with '^' operator.")
         # Checking malformed numbers
-        # Replace ** with space before splitting
-        temp_tokens = tokens.replace("**", " ")
+        # Replace ^ with space before splitting
+        temp_tokens = tokens.replace("^", " ")
         parts = (temp_tokens.replace("+", " ")
                  .replace("-", " ")
                  .replace("*", " ")
@@ -116,8 +135,17 @@ class Operations:
         return True
     # --- Parseur avec parenthèses ---
     def evaluate_expression(self, expr):
-        # Replace pi with 3.14
+        # Replace pi with 3.14159265359
         expr = expr.replace("pi", "3.14159265359").replace("PI", "3.14159265359").replace("Pi", "3.14159265359")
+        
+        # Convert ** to ^ for backward compatibility and better error handling
+        # Check for invalid sequences like *** first
+        if "***" in expr:
+            raise ValueError("Invalid operator sequence: '***' detected. Use '^' for exponentiation (e.g., 3^3).")
+        expr = expr.replace("**", "^")
+        
+        if not self.validate_expression(expr):
+            raise ValueError("Invalid expression")
         
         values = []
         ops = []
@@ -131,10 +159,10 @@ class Operations:
                     num += tokens[i]
                     i += 1
                 values.append(float(num))
-            elif tokens[i] == '+' and (i == 0 or tokens[i-1] == '(' or tokens[i-1] in '+-*/'):
+            elif tokens[i] == '+' and (i == 0 or tokens[i-1] == '(' or tokens[i-1] in '+-*/^'):
                 # Handle unary plus (just skip it)
                 i += 1
-            elif tokens[i] == '-' and (i == 0 or tokens[i-1] == '(' or tokens[i-1] in '+-*/'):
+            elif tokens[i] == '-' and (i == 0 or tokens[i-1] == '(' or tokens[i-1] in '+-*/^'):
                 # Handle negative numbers at start or after operators
                 i += 1
                 if i < len(tokens) and (tokens[i].isdigit() or tokens[i] == '.'):
@@ -162,15 +190,15 @@ class Operations:
                     values.append(self.apply_op(a, b, op)) 
                 ops.pop()  # remove '('
                 i += 1
-            elif i < len(tokens) - 1 and tokens[i] == '*' and tokens[i+1] == '*':
-                # Handle ** operator (right-associative, so use > instead of >=)
-                while ops and ops[-1] != '(' and self.priority(ops[-1]) > self.priority('**'):
+            elif tokens[i] == '^':
+                # Handle ^ operator (right-associative, so use > instead of >=)
+                while ops and ops[-1] != '(' and self.priority(ops[-1]) > self.priority('^'):
                     b = values.pop()
                     a = values.pop()
                     op = ops.pop()
                     values.append(self.apply_op(a, b, op))
-                ops.append('**')
-                i += 2
+                ops.append('^')
+                i += 1
             else:
                 # opérateur
                 while ops and ops[-1] != '(' and self.priority(ops[-1]) >= self.priority(tokens[i]):
