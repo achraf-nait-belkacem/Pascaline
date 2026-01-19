@@ -19,6 +19,7 @@ class History:
 
 class Operations:
     def __init__(self, history=None):
+        self.err_msg = ""
         self.result = 0
         if history is None:
             self.history = History()
@@ -67,7 +68,8 @@ class Operations:
         valid_chars = "0123456789.+-*/^()"
         for c in tokens:
             if c not in valid_chars: 
-                raise ValueError(f"Invalid character detected : '{c}'")
+                self.err_msg = f"Invalid character detected : '{c}'"
+                return False
 
         # Parenthesis verification
         stack = []
@@ -76,12 +78,13 @@ class Operations:
                 stack.append(c)
             elif c == ')':
                 if not stack:
-                    #return False
-                    raise ValueError("Closing parenthesis without an opening parenthesis.")
+                    self.err_msg = "Closing parenthesis without an opening parenthesis."
+                    return False
+
                 stack.pop()
         if stack:
-            #return False
-            raise ValueError("Opening parenthesis without a closing one.")
+            self.err_msg = "Opening parenthesis without a closing one."
+            return False
 
         # Checking consecutive operators and invalid operator combinations
         operators = "+-*/^"
@@ -172,7 +175,9 @@ class Operations:
                     values.append(0)
                     ops.append('-')
                 else:
-                    raise ValueError("Invalid negative number format")
+                    self.err_msg = "Invalid negative number format."
+                    return False
+
             elif tokens[i] == '(':
                 ops.append(tokens[i])
                 i += 1
