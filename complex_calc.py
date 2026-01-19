@@ -4,6 +4,7 @@ class History:
         self.expr = ""
 
     def show_history(self):
+        print("HIStTORY!!!çfzeiufheziu")
         if not self.history:
             return []
         return self.history.copy()
