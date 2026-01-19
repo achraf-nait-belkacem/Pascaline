@@ -1,22 +1,4 @@
-class History:
-    def __init__(self):
-        self.history = []
-        self.expr = ""
-
-    def show_history(self):
-        print("HIStTORY!!!çfzeiufheziu")
-        if not self.history:
-            return []
-        return self.history.copy()
-
-    def reset_history(self):
-        cleared_count = len(self.history)
-        self.history = []
-        return cleared_count
-    
-    def add_entry(self, entry):
-        self.history.append(entry)
-        return len(self.history)
+from history import History
 
 class Operations:
     def __init__(self, history=None):

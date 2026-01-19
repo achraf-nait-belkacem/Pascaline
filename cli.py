@@ -3,7 +3,6 @@ from utils import *
 from text import *
 from sig_handlers import *
 
-import readline
 
 def help_msg():
     print(HELP_MSG)
@@ -31,6 +30,9 @@ def cli_main():
             quit_msg()
         elif usr_input.lower() == "h":
             calculator.history.show_history()
+            continue
+        elif usr_input.lower() == "d":
+            calculator.history.reset_history()
             continue
 
         if calculator.validate_expression(usr_input) is False:
