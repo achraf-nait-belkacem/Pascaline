@@ -24,31 +24,52 @@ class Operations:
                 return 3
             return 0
     
-    @staticmethod
-    def apply_op(a, b, op):
+    def apply_op(self, a, b, op):
             if op == '+': return a + b
             if op == '-': return a - b
             if op == '*': return a * b
             if op == '/':
                 if b == 0:
-                    raise ValueError("Divided by zero is not allowed")
+                    self.err_msg = "Divided by zero is not allowed"
+                    return False
                 return a / b
             if op == '^': return a ** b
             if op == '//': return a // b
 
 
 ##########################################################
-    def validate_expression(self, expr):
+    def check_expression(self, expr):
+        self.err_msg = ""
         # Replace pi with 3.14 for validation
-        expr_with_pi = expr.replace("pi", "3.14159265359").replace("PI", "3.14159265359").replace("Pi", "3.14159265359")
+        expr_with_pi = expr.replace("p", "3.14159265359")
+
+        i = 0
+        # seen_number = False
+
+        # while i < len(expr):
+        #     while i < len(expr) and expr[i] == " ":
+        #         i += 1
+        #     if i >= len(expr):
+        #         break
+
+        #     if expr[i].isdigit() or expr[i] == "p":
+        #         if seen_number:
+        #             self.err_msg = "Consecutive numbers without any operator."
+        #             return False
+        #         seen_number = True
+        #     else:
+        #         seen_number = False
+
+        #     i += 1
+            
         tokens = expr_with_pi.replace(" ", "")
         
         #Check for empty expression
         if not tokens:
             return False
         
-        # Character validation ( will change with cos, sin ,tan later)
-        valid_chars = "0123456789.+-*/^()"
+        # Character validation
+        valid_chars = "0123456789.+-*/^()p"
         for c in tokens:
             if c not in valid_chars: 
                 self.err_msg = f"Invalid character detected : '{c}'"
@@ -70,36 +91,31 @@ class Operations:
             return False
 
         # Checking consecutive operators and invalid operator combinations
-        operators = "+-*/^"
+        operators = "+-*/^p"
         i = 0
         while i < len(tokens) - 1:
-            # Check for invalid sequences like ^^, *^, ^*, etc.
-            if tokens[i] == '^' and tokens[i+1] == '^':
-                raise ValueError("Invalid operator sequence: '^^' detected. Use single '^' for exponentiation.")
+            if tokens[i] == "p" and tokens[i+1] == "p":
+                self.err_msg = (f"Two consecutive operators detected: '{tokens[i]}' and '{tokens[i+1]}'")
+                return False
             elif tokens[i] in operators and tokens[i+1] in operators:
-                # Check for invalid combinations like *^, ^*, etc.
-                if (tokens[i] == '*' and tokens[i+1] == '^') or (tokens[i] == '^' and tokens[i+1] == '*'):
-                    raise ValueError(f"Invalid operator sequence: '{tokens[i]}{tokens[i+1]}' detected.")
                 # Allow '-' after operators for negative numbers
-                if not (tokens[i] in '+-*/^' and tokens[i+1] == '-'):
-                    raise ValueError(f"Two consecutive operators detected: '{tokens[i]}' and '{tokens[i+1]}'")
+                if not (tokens[i] in operators and tokens[i+1] == '-'):
+                    self.err_msg = (f"Two consecutive operators detected: '{tokens[i]}' and '{tokens[i+1]}'")
+                    return False
                 i += 1
             else:
                 i += 1
 
         # Checking operator at beginning/end
         if tokens[-1] in operators:
-            raise ValueError("Expression cannot end with an operator.")
+            self.err_msg = ("Expression cannot end with an operator.")
+            return False
         if tokens[0] in operators:
             # Allow '-' or '+' at start for negative/positive numbers
             if tokens[0] not in ('-', '+'):
-                raise ValueError("Expression cannot start with '*', '/', or '^' operator.")
-        # Check if expression starts with ^ (invalid)
-        if len(tokens) >= 1 and tokens[0] == '^':
-            raise ValueError("Expression cannot start with '^' operator.")
-        # Check if expression ends with ^ (invalid)
-        if len(tokens) >= 1 and tokens[-1] == '^':
-            raise ValueError("Expression cannot end with '^' operator.")
+                self.err_msg = ("Expression cannot start with '*', '/', or '^' operator.")
+                return False
+       
         # Checking malformed numbers
         # Replace ^ with space before splitting
         temp_tokens = tokens.replace("^", " ")
@@ -118,17 +134,8 @@ class Operations:
     # --- Parseur avec parenthèses ---
     def evaluate_expression(self, expr):
         # Replace pi with 3.14159265359
-        expr = expr.replace("pi", "3.14159265359").replace("PI", "3.14159265359").replace("Pi", "3.14159265359")
-        
-        # Convert ** to ^ for backward compatibility and better error handling
-        # Check for invalid sequences like *** first
-        if "***" in expr:
-            raise ValueError("Invalid operator sequence: '***' detected. Use '^' for exponentiation (e.g., 3^3).")
-        expr = expr.replace("**", "^")
-        
-        if not self.validate_expression(expr):
-            raise ValueError("Invalid expression")
-        
+        expr = expr.replace("p", "3.14159265359")
+
         values = []
         ops = []
         i = 0
@@ -169,6 +176,7 @@ class Operations:
                     b = values.pop()
                     a = values.pop()
                     op = ops.pop()
+
                     values.append(self.apply_op(a, b, op)) 
                 ops.pop()  # remove '('
                 i += 1

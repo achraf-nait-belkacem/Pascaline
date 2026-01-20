@@ -3,10 +3,10 @@ from utils import *
 from text import *
 from sig_handlers import *
 
+import readline
 
 def help_msg():
     print(HELP_MSG)
-    pause()
 
 def quit_msg():
     print(QUIT_MSG)
@@ -26,6 +26,7 @@ def cli_main():
     
         if usr_input.lower() == "help":
             help_msg()
+            continue
         elif usr_input.lower() == "q" or usr_input.lower() == "quit":
             quit_msg()
         elif usr_input.lower() == "h":
@@ -35,7 +36,13 @@ def cli_main():
             calculator.history.reset_history()
             continue
 
-        if calculator.validate_expression(usr_input) is False:
+        if calculator.check_expression(usr_input) is False:
             print(f"{calculator.err_msg}")
             continue
-        print(calculator.evaluate_expression(usr_input))
+        
+        result = calculator.evaluate_expression(usr_input)
+        if result is False:
+            print(f"{calculator.err_msg}")
+            continue
+    
+        print(result)
